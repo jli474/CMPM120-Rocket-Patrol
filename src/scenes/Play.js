@@ -68,17 +68,36 @@ class Play extends Phaser.Scene {
         }
         this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding * 2, this.p1Score, scoreConfig);
 
+        // GAME OVER flag
+        this.gameOver = false;
+
+        // 60-second play clock
+        scoreConfig.fixedWidth = 0;
+        this.clock = this.time.delayedCall(60000, () => {
+            this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
+            this.add.text(game.config.width/2, game.config.height/2 + 64, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
+            this.gameOver = true;
+        }, null, this);
+
     }
 
     update() {
+        // check key input for restart
+        if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyR)){
+            this.scene.restart();
+        }
+        if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyLEFT)) {
+            this.scene.start("menuScene");
+        }
+
         this.starfield.tilePositionX -= 3;
 
-        // update rocket
-        this.p1Rocket.update();
-        // update spaceship
-        this.ship01.update();
-        this.ship02.update();
-        this.ship03.update();
+        if (!this.gameOver) {               
+            this.p1Rocket.update();         // update rocket sprite
+            this.ship01.update();           // update spaceships (x3)
+            this.ship02.update();
+            this.ship03.update();
+        } 
 
         // check collisions
         if (this.checkCollision(this.p1Rocket, this.ship03)) {
@@ -93,6 +112,8 @@ class Play extends Phaser.Scene {
             this.p1Rocket.reset();
             this.shipExplode(this.ship01);
           }
+
+       
     }
 
     checkCollision(rocket, ship) {
@@ -105,6 +126,7 @@ class Play extends Phaser.Scene {
     }
 
     shipExplode(ship) {
+        this.sound.play('sfx_explosion');
         // temporarily hide ship
         ship.alpha = 0;
         // create explosion sprite at ship's position
